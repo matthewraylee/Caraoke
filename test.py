@@ -45,16 +45,6 @@ def get_current_track(access_token):
 
 
 # def getLyrics(title):
-
-def main():
-    curr_track_info, progress = get_current_track(SPOTIFY_ACCESS_TOKEN)
-
-    lyrics = get_lyrics(curr_track_info)
-
-    # Print Lyrics
-    print_lyrics(lyrics, progress)
-
-
 def get_lyrics(title):
     song_url = urllib.parse.quote(title)
     # print(song_url)
@@ -85,6 +75,16 @@ def print_lyrics(lyrics, progress):
 
         if progress + (time.time() - last_time) >= next_sec:
             line_i += 1
+
+
+def main():
+    curr_track_info, progress = get_current_track(SPOTIFY_ACCESS_TOKEN)
+
+    lyrics = get_lyrics(curr_track_info)
+
+    # Print Lyrics
+    print_lyrics(lyrics, progress)
+
 
 if __name__ == '__main__':
     main()
