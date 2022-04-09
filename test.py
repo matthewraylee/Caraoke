@@ -32,6 +32,7 @@ def get_current_track(access_token):
     resp_json = response.json()
 
     # Process Response JSON -- all from Spotify's response dictionary
+    duration = resp_json['progress_ms'] / 1000
     track_id = resp_json['item']['id']
     track_name = resp_json['item']['name']
     artists = resp_json['item']['artists']  # This is an array of artists
