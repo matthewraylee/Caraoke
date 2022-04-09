@@ -6,12 +6,12 @@ import time
 
 # Certification
 SPOTIFY_GET_CURRENT_TRACK_URL = 'https://api.spotify.com/v1/me/player/currently-playing'
+SPOTIFY_GET_PLAYBACK_STATE_URL = 'https://api.spotify.com/v1/me/player'
 SPOTIFY_ACCESS_TOKEN = 'BQDN-xm2xPJwzLsumPnA6GBEg2ybtOTt4BDLTbVM1SAckYvwo2M3AkjHwm1hPFMcNMuTm6cynq7IhC_o-0LRGc6mVIp_PDT6r5dLc4pofKLO5p_INFKj5nX8NeySpBxJp53D9fGmukLIYLxJwyC0AzZoKnsOwXI0QAOJW8qvLNs'
 
 GET_LYRICS_URL = 'https://api.textyl.co/api/lyrics?q='
 
 
-# Issue out a request to the spotify API
 # We're going to give it the access token and get back the data we need
 # Then we have to process that data, since it is in a format that we're going to need to make it more "friendly"
 def get_current_track(access_token):
@@ -19,32 +19,67 @@ def get_current_track(access_token):
     # Type of request: get request -- Params:
     #       URL: Will call out to a URL
     #       Headers: Takes in a dictionary
-    response = requests.get(
-        SPOTIFY_GET_CURRENT_TRACK_URL,
-        headers={
-            "Authorization": f"Bearer {access_token}"
-        }
-    )
+    try:
+        response = requests.get(
+            SPOTIFY_GET_CURRENT_TRACK_URL,
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
 
-    # Response JSON -- Whenever you make an API call using the request library,
-    # it gives you back a response object, which is the JSON response (A Python
-    # Dictionary that makes things easier to work with).
-    resp_json = response.json()
+        print(response.status_code)
 
-    # Process Response JSON -- all from Spotify's response dictionary
-    duration = resp_json['progress_ms'] / 1000
-    track_id = resp_json['item']['id']
-    track_name = resp_json['item']['name']
-    artists = resp_json['item']['artists']  # This is an array of artists
-    # Takes an array of artist names, and join them with the ', ' string
-    artist_names = ', '.join(
-        [artist['name'] for artist in artists]
-    )
+        # while response.status_code == 204:
+        #     print('No song playing')
+        #     time.sleep(1)
+        #     response = requests.get(
+        #         SPOTIFY_GET_CURRENT_TRACK_URL,
+        #         headers={
+        #             "Authorization": f"Bearer {access_token}"
+        #         }
+        #     )
 
-    return track_name + ' ' + artist_names, duration
+        print('exited loop')
+        response.raise_for_status()
+        # print(response.json())
+
+        # Response JSON -- Whenever you take an API call using the request library,
+        # it gives you back a response object, which is the JSON response (A Python
+        # Dictionary that makes things easier to work with).
+        resp_json = response.json()
+
+        # Process Response JSON -- all from Spotify's response dictionary
+        duration = resp_json['progress_ms'] / 1000
+        track_id = resp_json['item']['id']
+        track_name = resp_json['item']['name']
+        artists = resp_json['item']['artists']  # This is an array of artists
+        # Takes an array of artist names, and join them with the ', ' string
+        artist_names = ', '.join(
+            [artist['name'] for artist in artists]
+        )
+
+        return track_name + ' ' + artist_names, duration
+    except requests.exceptions.HTTPError:
+        print('Error get_current_track caught')
+        return None, 0.0
 
 
-# def getLyrics(title):
+def is_playing(access_token):
+    try:
+        r = requests.get(
+            SPOTIFY_GET_PLAYBACK_STATE_URL,
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
+        r.raise_for_status()
+        # print('is_playing', r.json()['is_playing'])
+        return r.json()['is_playing']
+    except requests.exceptions.HTTPError:
+        print('Error is_playing caught')
+        return False
+
+
 def get_lyrics(title):
     song_url = urllib.parse.quote(title)
     # print(song_url)
@@ -78,12 +113,17 @@ def print_lyrics(lyrics, progress):
 
 
 def main():
+    # Get current track
     curr_track_info, progress = get_current_track(SPOTIFY_ACCESS_TOKEN)
+    # get_current_track(SPOTIFY_ACCESS_TOKEN)
+    print(curr_track_info)
 
+    # Get Lyrics
     lyrics = get_lyrics(curr_track_info)
 
     # Print Lyrics
-    print_lyrics(lyrics, progress)
+    if is_playing(SPOTIFY_ACCESS_TOKEN):
+        print_lyrics(lyrics, progress)
 
 
 if __name__ == '__main__':
