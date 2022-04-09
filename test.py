@@ -1,12 +1,12 @@
+import math
+
 import requests
-import time
-from pprint import pprint
 import urllib.parse
+import time
 
 # Certification
-SPOTIFY_GET_CURRENT_TRACK_URL = 'https://api.spotify.com/v1/me/player'
-SPOTIFY_ACCESS_TOKEN = 'BQBidmoshmrh9XcBVgmzjH_3wyKTkiqp9nOYNvGmEXkc66PSWV47s33bTnuXVuJ9qSYLUAQLOlyBn51BaeMYXtQX-' \
-                       'VdzbOJR8D4yyHDfjqNe599jjyMUEQnEc11KDr9FpTBmTYK0bOCIU7bEDc2bq_vx6qe0Rhh6_ezMswKy1-VqnWE'
+SPOTIFY_GET_CURRENT_TRACK_URL = 'https://api.spotify.com/v1/me/player/currently-playing'
+SPOTIFY_ACCESS_TOKEN = 'BQCCilvazPKlVDbjAc5GyfQ5eiAFxZIXXAq4UEI9QNIZ61kG0Gme_YPPDe2070hU17RXEBZtJv0Nul1n-w8niKmYuebjS4isB7BSnDnB_nrw9rt3nMJSinGpol5epTGLE4owrMms8JYMz1sZ7pV0SpcWUYZ5yAh5rD6dcUdur9I'
 
 GET_LYRICS_URL = 'https://api.textyl.co/api/lyrics?q='
 
@@ -39,31 +39,85 @@ def get_current_track(access_token):
     artist_names = ', '.join(
         [artist['name'] for artist in artists]
     )
-    # Link to the song
-    link = resp_json['item']['external_urls']['spotify']
 
-    # The dictionary we want to return
-    current_track_info = {
-        "id": track_id,
-        "name": track_name,
-        "artists": artist_names,
-        "link": link
-    }
-
-    return current_track_info
+    return track_name + ' ' + artist_names, duration
 
 
 # def getLyrics(title):
 
 def main():
-    while True:
-        current_track_info = get_current_track(SPOTIFY_ACCESS_TOKEN)
+    # while True
 
-        # Pretty Print - Nice way of printing out dictionaries
-        pprint(current_track_info, indent=4)
+    curr_track_info, progress = get_current_track(SPOTIFY_ACCESS_TOKEN)
+    last_time = time.time()
+    # print(current_track_info)
+    # print(type(current_track_info))
 
-        # Let it run every 2 seconds
-        time.sleep(2)
+    lyrics = get_lyrics(curr_track_info)
+    # print(lyrics)
+    # print(type(lyrics))
+    # print(progress)  # progress_ms
+
+    total_lines = len(lyrics)  # total lyric lines
+    line_i = 0              # current line index
+    prev = -1
+    # while line_i < total_lines:
+    #     line = lyrics[line_i]  # current line
+    #     sec = line['seconds']     # current sec
+    #     lyr = line['lyrics']      # current lyric
+    #
+    #     next_line = lyrics[line_i + 1]  # next in the dict
+    #     next_sec = next_line['seconds']    # next second in the dict
+    #
+    #     print(math.floor(progress))
+    #     print('sec: ', sec)
+    #     if math.floor(progress) == sec:
+    #         print(lyr)
+    #     elif math.ceil(progress) < next_sec:
+    #         curr_track_info, progress = get_current_track(SPOTIFY_ACCESS_TOKEN)
+    #     else:
+    #         print('current progress: ', progress)
+    #         line_i += 1
+    while line_i < total_lines:  # keep on going until no more lyrics to display
+        line = lyrics[line_i]   # current line
+        sec = line['seconds']     # current sec
+        lyr = line['lyrics']      # current lyric
+
+        next_line = lyrics[line_i + 1]  # next in the dict
+        next_sec = next_line['seconds']    # next second in the dict
+
+        if line_i != prev:
+            print(lyr)
+            prev = line_i
+
+        if progress + (time.time() - last_time) >= next_sec:
+            line_i += 1
+
+
+
+def get_lyrics(title):
+    song_url = urllib.parse.quote(title)
+    # print(song_url)
+    lyric_url = GET_LYRICS_URL + song_url
+    lyrics = requests.get(lyric_url).json()
+    # print(lyrics.json())
+    return lyrics
+    # Convert to our own dictionary
+    # our_lyrics = []
+    # for line in lyrics:
+    #     our_lyrics.append((line['seconds'], line['lyrics']))
+    #     # our_lyrics[line['seconds']] = line['lyrics']
+    #
+    # return our_lyrics
+
+
+# def print_lyrics(lyrics):
+#     # print(lyrics)
+#     # print(len(lyrics))
+#     # second = lyrics[0]
+#     for second, lyric in lyrics.items():
+#         print(lyric)
+#     # print(lyrics)
 
 
 if __name__ == '__main__':
