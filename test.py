@@ -108,7 +108,7 @@ def print_lyrics(lyrics, progress):
             print(lyr)
             prev = line_i
 
-        if progress + (time.time() - last_time) >= next_sec:
+        if progress + (time.time() - last_time) >= next_sec - 0.2:
             line_i += 1
 
 
