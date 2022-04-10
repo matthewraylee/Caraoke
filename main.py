@@ -1,6 +1,3 @@
-import math
-import base64
-from secrets import *
 import requests
 import urllib.parse
 import time
@@ -9,7 +6,8 @@ import serial
 # Certification
 SPOTIFY_GET_CURRENT_TRACK_URL = 'https://api.spotify.com/v1/me/player/currently-playing'
 SPOTIFY_GET_PLAYBACK_STATE_URL = 'https://api.spotify.com/v1/me/player'
-SPOTIFY_ACCESS_TOKEN = 'BQCuygURy6cf93YGKr2rO0IkzA0O9XlzcZ6aB8eczs0bmBial0mXssqgCdiFW7GA1U3fIj1IhmFwTDXPwOcxnTbA3A_uSBclDjjW57EMekrwoOSHor5nu6J6Zg3rLuzvzwb-FZD4ABdacNFabrPL_dhJpok81ejWbsIX6kbKja0tpwY'
+SPOTIFY_ACCESS_TOKEN = 'BQAQKVPdGyaiXty-SzQIyUVvEA3TxGcv9Y3PcyNEAG7jHGoPj1Em53Lv9etQkBgz2Fhtl7-_2l6qUKBC0Jd1xvTMVZJr' \
+                       'PxQPtdrZVqbnk231xyXEvGA11gafrNo_op3uEqtAHHrxhHnfryYDQA8fIahVojlTpxd2_5FfnngaANnqQZk'
 GET_LYRICS_URL = 'https://api.textyl.co/api/lyrics?q='
 ARD = serial.Serial("COM3", 9600)
 
@@ -69,6 +67,7 @@ def is_playing(access_token):
         return False
 
 
+# Retrieves the lyrics from the lyrics API
 def get_lyrics(title):
     song_url = urllib.parse.quote(title)
     lyric_url = GET_LYRICS_URL + song_url
@@ -76,6 +75,8 @@ def get_lyrics(title):
     return lyrics
 
 
+# Using the Serial package, communicates with the Arduino code by sending the lyrics
+# for processing and display. The mechanism to sync the song lyrics is managed here.
 def print_lyrics(lyrics, progress, duration):
     progress_duration = progress
     last_time = time.time()
@@ -85,7 +86,6 @@ def print_lyrics(lyrics, progress, duration):
 
     while line_i < total_lines:  # keep on going until no more lyrics to display
         line = lyrics[line_i]  # current line
-        sec = line['seconds']  # current sec
         lyr = line['lyrics']  # current lyric
 
         if line_i < total_lines - 1:
@@ -108,11 +108,11 @@ def print_lyrics(lyrics, progress, duration):
     return True
 
 
+# Main function
 def main():
     while True:
         if int.from_bytes(ARD.read(), "little") == 48:
             break
-
 
     song_ended = True
 
@@ -134,5 +134,6 @@ def main():
             song_ended = print_lyrics(lyrics, start_progress, duration)
 
 
+# Driver function
 if __name__ == '__main__':
     main()
