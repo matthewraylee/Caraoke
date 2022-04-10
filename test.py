@@ -118,7 +118,7 @@ def print_lyrics(lyrics, progress, duration):
     progress_duration += time.time() - last_time
 
     time.sleep(duration - progress_duration)
-
+    #return
     return True
 
 def main():
