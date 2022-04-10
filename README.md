@@ -12,10 +12,10 @@ Within a click of a button, the lyrics to that song will start appearing on our 
 
 
 ## How we built it
-###Software
+### Software
 The core software was built using Python, utilizing Spotify's powerful API to get information on the song currently played by the user. Using this data, we would retrieve the lyrics using [Textyl.co](https://api.textyl.co/api/lyrics?q=query)'s API generator. The syncing is accomplished using an internal custom-built stopwatch that lets us predict the user's current timestamp. The rest is fulfilled by our hardware.
 
-###Hardware
+### Hardware
 We used an Arduino Genuino 101 to power and communicate with our 16x2 Grove LCD-RGB Backlight display. Using Python's `Serial` package, we managed to transmit the required information through our computer ports, binding together the power of two programming languages.
 
 
