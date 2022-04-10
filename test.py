@@ -105,6 +105,11 @@ def print_lyrics(lyrics, progress, duration):
     return True
 
 def main():
+    pressed = 1
+
+    while pressed == 1:
+        pressed = ARD.read()
+
     song_ended = True
 
     while song_ended == True:
