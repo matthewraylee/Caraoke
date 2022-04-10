@@ -7,7 +7,8 @@ import time
 # Certification
 SPOTIFY_GET_CURRENT_TRACK_URL = 'https://api.spotify.com/v1/me/player/currently-playing'
 SPOTIFY_GET_PLAYBACK_STATE_URL = 'https://api.spotify.com/v1/me/player'
-SPOTIFY_ACCESS_TOKEN = 'BQDN-xm2xPJwzLsumPnA6GBEg2ybtOTt4BDLTbVM1SAckYvwo2M3AkjHwm1hPFMcNMuTm6cynq7IhC_o-0LRGc6mVIp_PDT6r5dLc4pofKLO5p_INFKj5nX8NeySpBxJp53D9fGmukLIYLxJwyC0AzZoKnsOwXI0QAOJW8qvLNs'
+#SPOTIFY_ACCESS_TOKEN = 'BQDN-xm2xPJwzLsumPnA6GBEg2ybtOTt4BDLTbVM1SAckYvwo2M3AkjHwm1hPFMcNMuTm6cynq7IhC_o-0LRGc6mVIp_PDT6r5dLc4pofKLO5p_INFKj5nX8NeySpBxJp53D9fGmukLIYLxJwyC0AzZoKnsOwXI0QAOJW8qvLNs'
+SPOTIFY_ACCESS_TOKEN = 'BQA6gt4sjTleiVk5ILkPCbvJU-yFSf4HylSFQEd9wemjO6uQ4JVOz5W1JkxHQOQhmuuojkWNMS4uaFVY6MOKGJE4uk-SgUJeEXrZFMk04kocY2xBVdYaCZCuNHPUxwNiqHYyKRKTI_k1k7FhHHKKJIwzjg'
 
 GET_LYRICS_URL = 'https://api.textyl.co/api/lyrics?q='
 
@@ -49,7 +50,8 @@ def get_current_track(access_token):
         resp_json = response.json()
 
         # Process Response JSON -- all from Spotify's response dictionary
-        duration = resp_json['progress_ms'] / 1000
+        progress = resp_json['progress_ms'] / 1000.0
+        duration = resp_json['item']['duration_ms'] / 1000.0
         track_id = resp_json['item']['id']
         track_name = resp_json['item']['name']
         artists = resp_json['item']['artists']  # This is an array of artists
@@ -58,7 +60,7 @@ def get_current_track(access_token):
             [artist['name'] for artist in artists]
         )
 
-        return track_name + ' ' + artist_names, duration
+        return track_name + ' ' + artist_names, progress, duration
     except requests.exceptions.HTTPError:
         print('Error get_current_track caught')
         return None, 0.0
@@ -72,7 +74,8 @@ def is_playing(access_token):
                 "Authorization": f"Bearer {access_token}"
             }
         )
-        r.raise_for_status()
+        print(r.raise_for_status())
+
         # print('is_playing', r.json()['is_playing'])
         return r.json()['is_playing']
     except requests.exceptions.HTTPError:
@@ -89,11 +92,12 @@ def get_lyrics(title):
     return lyrics
 
 
-def print_lyrics(lyrics, progress):
+def print_lyrics(lyrics, progress, duration):
+    progress_duration = progress
     last_time = time.time()
     total_lines = len(lyrics)  # total lyric lines
     line_i = 0  # current line index
-    prev = -1
+    prev = -1 # previous line index
 
     while line_i < total_lines:  # keep on going until no more lyrics to display
         line = lyrics[line_i]  # current line
@@ -108,23 +112,33 @@ def print_lyrics(lyrics, progress):
             print(lyr)
             prev = line_i
 
-        if progress + (time.time() - last_time) >= next_sec - 0.2:
+        if progress + (time.time() - last_time) >= next_sec - 0.1:
             line_i += 1
 
+    progress_duration += time.time() - last_time
+
+    time.sleep(duration - progress_duration)
+
+    return True
 
 def main():
-    # Get current track
-    curr_track_info, progress = get_current_track(SPOTIFY_ACCESS_TOKEN)
-    # get_current_track(SPOTIFY_ACCESS_TOKEN)
-    print(curr_track_info)
+    song_ended = True
 
-    # Get Lyrics
-    lyrics = get_lyrics(curr_track_info)
+    # Every start_progerss = 0 indicates a new song is playing
+    while song_ended == True:
+        song_ended = False
+        # Get current track
+        # track-artist name, start progress
+        curr_track_info, start_progress, duration = get_current_track(SPOTIFY_ACCESS_TOKEN)
 
-    # Print Lyrics
-    if is_playing(SPOTIFY_ACCESS_TOKEN):
-        print_lyrics(lyrics, progress)
+        print(curr_track_info)
 
+        # Get Lyrics of track-artist
+        lyrics = get_lyrics(curr_track_info)
+
+        # Print Lyrics
+        if is_playing(SPOTIFY_ACCESS_TOKEN):
+            song_ended = print_lyrics(lyrics, start_progress, duration)
 
 if __name__ == '__main__':
     main()
