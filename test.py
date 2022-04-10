@@ -90,6 +90,7 @@ def print_lyrics(lyrics, progress, duration):
             next_sec = next_line['seconds']  # next second in the dict
 
         if line_i != prev:
+            # print in console and to arduino
             print(lyr)
             ARD.write(str(lyrics))
             prev = line_i
