@@ -1,17 +1,17 @@
 import math
-
+import base64
+from secrets import *
 import requests
 import urllib.parse
 import time
+import serial
 
 # Certification
 SPOTIFY_GET_CURRENT_TRACK_URL = 'https://api.spotify.com/v1/me/player/currently-playing'
 SPOTIFY_GET_PLAYBACK_STATE_URL = 'https://api.spotify.com/v1/me/player'
-#SPOTIFY_ACCESS_TOKEN = 'BQDN-xm2xPJwzLsumPnA6GBEg2ybtOTt4BDLTbVM1SAckYvwo2M3AkjHwm1hPFMcNMuTm6cynq7IhC_o-0LRGc6mVIp_PDT6r5dLc4pofKLO5p_INFKj5nX8NeySpBxJp53D9fGmukLIYLxJwyC0AzZoKnsOwXI0QAOJW8qvLNs'
-SPOTIFY_ACCESS_TOKEN = 'BQA6gt4sjTleiVk5ILkPCbvJU-yFSf4HylSFQEd9wemjO6uQ4JVOz5W1JkxHQOQhmuuojkWNMS4uaFVY6MOKGJE4uk-SgUJeEXrZFMk04kocY2xBVdYaCZCuNHPUxwNiqHYyKRKTI_k1k7FhHHKKJIwzjg'
-
+SPOTIFY_ACCESS_TOKEN = 'BQBdfE_02ZWFH7OFmxRbK1UXsgJjrgpR9rNNDL7i4N01zfLGYBZ6vJ9gRif-0lsjGzQ1bKHl8ywVf5ffw1OEsrGVhSmnh96F_TA-MyFWfs-sCCjpeR_ZM_rzFZaEHQ2ckTxTTJLcUhJ_LeycaDSrJpSKbg'
 GET_LYRICS_URL = 'https://api.textyl.co/api/lyrics?q='
-
+ARD = serial.Serial("COM3", 9600)
 
 # We're going to give it the access token and get back the data we need
 # Then we have to process that data, since it is in a format that we're going to need to make it more "friendly"
@@ -28,21 +28,7 @@ def get_current_track(access_token):
             }
         )
 
-        print(response.status_code)
-
-        # while response.status_code == 204:
-        #     print('No song playing')
-        #     time.sleep(1)
-        #     response = requests.get(
-        #         SPOTIFY_GET_CURRENT_TRACK_URL,
-        #         headers={
-        #             "Authorization": f"Bearer {access_token}"
-        #         }
-        #     )
-
-        print('exited loop')
         response.raise_for_status()
-        # print(response.json())
 
         # Response JSON -- Whenever you take an API call using the request library,
         # it gives you back a response object, which is the JSON response (A Python
@@ -76,21 +62,16 @@ def is_playing(access_token):
         )
         print(r.raise_for_status())
 
-        # print('is_playing', r.json()['is_playing'])
         return r.json()['is_playing']
     except requests.exceptions.HTTPError:
         print('Error is_playing caught')
         return False
 
-
 def get_lyrics(title):
     song_url = urllib.parse.quote(title)
-    # print(song_url)
     lyric_url = GET_LYRICS_URL + song_url
     lyrics = requests.get(lyric_url).json()
-    # print(lyrics.json())
     return lyrics
-
 
 def print_lyrics(lyrics, progress, duration):
     progress_duration = progress
@@ -110,25 +91,27 @@ def print_lyrics(lyrics, progress, duration):
 
         if line_i != prev:
             print(lyr)
+            ARD.write(str(lyrics))
             prev = line_i
 
-        if progress + (time.time() - last_time) >= next_sec - 0.1:
+        if progress + (time.time() - last_time) >= next_sec - 0.5:
             line_i += 1
 
     progress_duration += time.time() - last_time
 
     time.sleep(duration - progress_duration)
-    #return
+
     return True
 
 def main():
     song_ended = True
 
-    # Every start_progerss = 0 indicates a new song is playing
     while song_ended == True:
         song_ended = False
-        # Get current track
+        # Get current track of user
         # track-artist name, start progress
+        res = get_current_track(SPOTIFY_ACCESS_TOKEN)
+        print(res)
         curr_track_info, start_progress, duration = get_current_track(SPOTIFY_ACCESS_TOKEN)
 
         print(curr_track_info)
